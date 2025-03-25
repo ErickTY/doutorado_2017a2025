@@ -28,6 +28,31 @@ Este repositório contém uma classe Python que implementa um pipeline completo 
 
 ---
 
+## 🔍 Observação sobre Feature Importance e Feature Extraction
+
+### Feature Importance e Feature Extraction são pré-processamentos ou análise exploratória?
+
+#### 🔹 Feature Importance
+- É usada para medir a relevância de variáveis para predição.
+- Pode ser:
+  - **Análise exploratória**: quando usada para interpretar e compreender os dados.
+  - **Pré ou pós-processamento**: quando os resultados são usados para ajustar o modelo (ex: eliminar variáveis).
+
+#### 🔹 Feature Extraction
+- Cria novas variáveis a partir das existentes (ex: PCA).
+- É classificada como:
+  - **Pré-processamento**: altera os dados antes do treinamento do modelo.
+  - Raramente é considerada parte da análise exploratória (exceto para visualização dimensional).
+
+#### 📄 Resumo
+
+| Técnica             | EDA? | Pré-processamento? | Pós-processamento? |
+|---------------------|------|----------------------|--------------------|
+| Feature Importance  | ✅  | ✅                   | ✅                 |
+| Feature Extraction  | ❌  | ✅                   | ❌                 |
+
+---
+
 ## ⚖️ Requisitos
 
 ```bash
