@@ -76,6 +76,7 @@ pipeline.summary()
 ```
 .
 ├── ai_pipeline.py       # Classe principal com pré-processamentos e modelos
+├── codigo_doutorado_tsfel_pycaret.ipynb  # Jupyter Notebook com o código principal
 ├── README.md            # Este arquivo
 ```
 
