@@ -53,6 +53,34 @@ Este repositório contém uma classe Python que implementa um pipeline completo 
 
 ---
 
+## 🎯 Por que foi usado ANOVA F em vez de SHAP?
+
+### ANOVA F (f_classif)
+- É um teste estatístico que mede a variância entre grupos (classes) para cada feature.
+- Avalia a relação entre cada variável independente e a variável alvo.
+- Muito eficiente, rápido e funciona **antes do modelo ser treinado**.
+- Ideal para seleção de atributos em estágios iniciais.
+
+### SHAP (SHapley Additive exPlanations)
+- Método baseado em teoria dos jogos para explicar o impacto de cada feature na predição.
+- É **pós-modelo**: precisa de um modelo treinado para funcionar.
+- Mais pesado computacionalmente, mas mais interpretável.
+- Ideal para auditoria e interpretação fina do comportamento do modelo.
+
+### 📌 Comparativo
+
+| Critério                  | ANOVA F                     | SHAP                                  |
+|--------------------------|-----------------------------|----------------------------------------|
+| Tipo                     | Estatística univariada       | Explicabilidade baseada em modelo     |
+| Pré-requisito            | Nenhum modelo treinado       | Requer modelo já treinado             |
+| Custo computacional      | Muito baixo                  | Alto                                   |
+| Interpretabilidade       | Média                        | Alta                                   |
+| Quando usar?             | Seleção inicial de features  | Entender comportamento do modelo      |
+
+### ✅ Conclusão
+> ANOVA F foi utilizado neste projeto por ser leve, eficaz e ideal para a seleção inicial de variáveis, enquanto SHAP é mais indicado para explicação de modelos já treinados.
+
+---
 ## ⚖️ Requisitos
 
 ```bash
