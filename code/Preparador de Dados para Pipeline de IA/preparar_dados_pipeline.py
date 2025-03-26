@@ -5,7 +5,7 @@ import tsfel
 from sklearn.preprocessing import LabelEncoder
 
 # Caminho base para os arquivos
-base_path = '/mnt/data/'
+base_path = '/datasets/'
 
 # Lista de arquivos enviados (com nomes e rótulos atribuídos manualmente)
 arquivos = [
