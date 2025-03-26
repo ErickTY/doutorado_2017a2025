@@ -17,10 +17,10 @@ Este projeto tem como objetivo preparar os dados de sensores de pressão, extra�
 ### 1. Clone este repositório (ou envie o script para o Colab)
 
 ```python
-!git clone https://github.com/seu-usuario/seu-repositorio.git
+!git clone https://github.com/ErickTY/doutorado2025.git
 ```
 ```python
-%cd seu-repositorio
+%cd doutorado2025
 ```
 
 ### 2. Instale as bibliotecas necessárias
@@ -29,18 +29,10 @@ Este projeto tem como objetivo preparar os dados de sensores de pressão, extra�
 !pip install tsfel
 ```
 
-### 3. Envie os arquivos CSV para o ambiente Colab
-
-Use o upload de arquivos:
-```python
-from google.colab import files
-uploaded = files.upload()
-```
-
-### 4. Execute o script `preparar_dados_pipeline.py`
+### 3. Execute o script `preparar_dados_pipeline.py`
 
 ```python
-%run preparar_dados_pipeline.py
+%run /content/doutorado2025/code/Preparador\ de\ Dados\ para\ Pipeline\ de\ IA/preparar_dados_pipeline.py
 ```
 
 Isso irá gerar dois arquivos:
