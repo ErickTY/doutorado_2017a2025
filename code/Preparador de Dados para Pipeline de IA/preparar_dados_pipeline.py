@@ -55,7 +55,7 @@ features = tsfel.time_series_features_extractor(cfg, df_tsfel_input.drop(columns
 
 # Codificar os rótulos
 le = LabelEncoder()
-y = le.fit_transform(df_series['label'])
+y = le.fit_transform(df_tsfel_input['label'])
 
 # Salvar para uso no AIModelPipeline
 features.to_csv("./datasets/X_tsfel.csv", index=False)
