@@ -1,38 +1,104 @@
-# Preparar Dados para AIModelPipeline - README
+# Preparador de Dados para Pipeline de IA com Séries Temporais
 
-Este repositório contém um script Python que prepara dados de sensores de pressão, coletados em diferentes circuitos com e sem vazamentos, para posterior uso em um pipeline de modelos de inteligência artificial (IA).
-
-A preparação inclui:
-- Leitura dos arquivos CSV de sensores
-- Extração de janelas de tempo (slices)
-- Extração de atributos com a biblioteca **TSFEL**
-- Geração dos arquivos `X_tsfel.csv` (features) e `y_tsfel.csv` (rótulos) para treinamento e análise com o `AIModelPipeline`
+Este projeto tem como objetivo preparar os dados de sensores de pressão, extraídos de diferentes circuitos (com e sem vazamentos), para uso em um pipeline de Inteligência Artificial (AIModelPipeline). A preparação inclui extração de janelas, extração de atributos e exportação final de dados prontos para modelagem.
 
 ---
 
-## 🚀 Como Executar no Google Colab
+## 🚀 Objetivo
 
-### 1. Suba os arquivos CSV para o ambiente do Colab:
+- Extrair janelas de 100 amostras dos sinais de pressão.
+- Usar a biblioteca **TSFEL** para extrair atributos estatísticos, temporais e espectrais dessas janelas.
+- Gerar arquivos `X_tsfel.csv` e `y_tsfel.csv` prontos para serem utilizados no `AIModelPipeline`.
 
-Inclua os seguintes arquivos no diretório do Colab (via upload ou Google Drive):
-- `sensor_data_sVaz_circuito1.csv`
-- `sensor_data_sVaz_circuito2.csv`
-- `sensor_data_sVaz_circuito31_coleta1.csv`
-- `sensor_data_sVaz_circuito31_coleta2.csv`
-- `sensor_data_sVaz_circuito32_coleta1.csv`
-- `sensor_data_sVaz_circuito32_coleta2.csv`
-- `sensor_data_cVaz_circuito1_avanço_0.6mm.csv`
-- `sensor_data_cVaz_circuito1_recuo_0.6mm.csv`
-- `sensor_data_cVaz_circuito2_avanço_0.6mm.csv`
-- `sensor_data_cVaz_circuito2_recuo_0.6mm.csv`
+---
 
-### 2. Instale as bibliotecas necessárias:
+## 💻 Execução no Google Colab
+
+### 1. Clone este repositório (ou envie o script para o Colab)
+
 ```python
-!pip install tsfel
-!pip install scikit-learn pandas
+!git clone https://github.com/seu-usuario/seu-repositorio.git
+%cd seu-repositorio
 ```
 
-### 3. Execute o script `preparar_dados_pipeline.py`:
-Copie o conteúdo do script e cole em uma célula do Colab. O script:
-- Carrega os arquivos
-- Divide os sinais em janelas de 100 amostras
+### 2. Instale as bibliotecas necessárias
+
+```python
+!pip install tsfel
+```
+
+### 3. Envie os arquivos CSV para o ambiente Colab
+
+Use o upload de arquivos:
+```python
+from google.colab import files
+uploaded = files.upload()
+```
+
+### 4. Execute o script `preparar_dados_pipeline.py`
+
+```python
+%run preparar_dados_pipeline.py
+```
+
+Isso irá gerar dois arquivos:
+- `X_tsfel.csv`: Dados de entrada com atributos extraídos
+- `y_tsfel.csv`: Rótulos codificados (normal ou vazamento)
+
+---
+
+## 🔍 Descrição Técnica
+
+- **Entrada**: arquivos CSV contendo sinais de pressão (`Pressure (bar)`)
+- **Processo**:
+  - Recorte de janelas com tamanho 100 e passo 10
+  - Extração de atributos com TSFEL (automática por domínio)
+  - Codificação dos rótulos com `LabelEncoder`
+- **Saída**:
+  - DataFrame `X` com atributos para modelagem
+  - Vetor `y` com classes (0 = normal, 1 = vazamento)
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+.
+├── preparar_dados_pipeline.py     # Script principal de processamento
+├── X_tsfel.csv                    # Dados prontos com features extraídas
+├── y_tsfel.csv                    # Rótulos codificados
+├── README.md                      # Este arquivo
+```
+
+---
+
+## ✅ Exemplo de Integração com AIModelPipeline
+
+```python
+import pandas as pd
+from ai_pipeline import AIModelPipeline
+
+X = pd.read_csv("X_tsfel.csv")
+y = pd.read_csv("y_tsfel.csv")["label"]
+
+pipeline = AIModelPipeline(X, y)
+pipeline.normalize()
+pipeline.apply_pca(n_components=5)
+pipeline.feature_extraction(k=10)
+pipeline.train_rf()
+pipeline.train_mlp()
+pipeline.summary()
+```
+
+---
+
+## 🚑 Suporte
+
+Em caso de dúvidas, envie uma issue neste repositório ou entre em contato com os desenvolvedores.
+
+---
+
+## ✅ Licença
+
+Este projeto é de uso livre para fins acadêmicos e educacionais.
+
