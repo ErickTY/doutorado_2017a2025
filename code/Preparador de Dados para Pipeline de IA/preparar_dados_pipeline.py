@@ -1,4 +1,3 @@
-
 import pandas as pd
 import os
 import tsfel
@@ -25,7 +24,7 @@ arquivos = [
 def extrair_janelas(signal, tamanho=100, passo=10):
     janelas = []
     for i in range(0, len(signal) - tamanho, passo):
-        janelas.append(signal[i:i + tamanho].values)
+        janelas.append(signal[i:i + tamanho].values.flatten())  # Ensure each window is a flat array
     return janelas
 
 # Carregar e processar todos os arquivos
@@ -39,6 +38,10 @@ for nome_arquivo, rotulo in arquivos:
     janelas = extrair_janelas(df["Pressure (bar)"])
     dados_janelas.extend(janelas)
     rotulos.extend([rotulo] * len(janelas))
+
+# Verify structure before converting to DataFrame
+print("Sample window:", dados_janelas[0])
+print("Shape of first window:", len(dados_janelas[0]))
 
 # Converter em DataFrame com TSFEL
 df_series = pd.DataFrame({"signal": dados_janelas, "label": rotulos})
