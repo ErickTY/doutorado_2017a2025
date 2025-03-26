@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import tsfel
 from sklearn.preprocessing import LabelEncoder
+import numpy as np
 
 # Caminho base para os arquivos
 base_path = './datasets/'
@@ -39,23 +40,25 @@ for nome_arquivo, rotulo in arquivos:
     dados_janelas.extend(janelas)
     rotulos.extend([rotulo] * len(janelas))
 
-# Verify structure before converting to DataFrame
-print("Sample window:", dados_janelas[0])
-print("Shape of first window:", len(dados_janelas[0]))
+# Reshape data for TSFEL -  create a DataFrame where each column is a time step
+num_time_steps = len(dados_janelas[0])  # Assuming all windows have the same length
+all_windows = np.array(dados_janelas)  # Convert list of windows to a 2D array
+df_tsfel_input = pd.DataFrame(all_windows) 
 
-# Converter em DataFrame com TSFEL
-df_series = pd.DataFrame({"signal": dados_janelas, "label": rotulos})
+# Add labels as a separate column
+df_tsfel_input['label'] = rotulos
 
 # Extração de features com TSFEL
 cfg = tsfel.get_features_by_domain()
-features = tsfel.time_series_features_extractor(cfg, df_series['signal'], verbose=0)
+# Now pass the DataFrame without the 'label' column to the extractor
+features = tsfel.time_series_features_extractor(cfg, df_tsfel_input.drop(columns=['label']), verbose=0)
 
 # Codificar os rótulos
 le = LabelEncoder()
 y = le.fit_transform(df_series['label'])
 
 # Salvar para uso no AIModelPipeline
-features.to_csv("/mnt/data/X_tsfel.csv", index=False)
-pd.DataFrame({"label": y}).to_csv("/mnt/data/y_tsfel.csv", index=False)
+features.to_csv("./datasets/X_tsfel.csv", index=False)
+pd.DataFrame({"label": y}).to_csv("./datasets/y_tsfel.csv", index=False)
 
 print("✔️ Dados preparados e salvos: X_tsfel.csv e y_tsfel.csv")
