@@ -18,6 +18,8 @@ Este projeto tem como objetivo preparar os dados de sensores de press√£o, extra√
 
 ```python
 !git clone https://github.com/seu-usuario/seu-repositorio.git
+```
+```python
 %cd seu-repositorio
 ```
 
