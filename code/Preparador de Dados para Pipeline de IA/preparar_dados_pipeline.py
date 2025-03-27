@@ -9,14 +9,14 @@ base_path = './datasets/'
 
 # Lista de arquivos enviados (com nomes e rótulos atribuídos manualmente)
 arquivos = [
-    ("sensor_data_sVaz_circuito1.csv", "normal"),
+    #("sensor_data_sVaz_circuito1.csv", "normal"),
     ("sensor_data_sVaz_circuito2.csv", "normal"),
-    ("sensor_data_sVaz_circuito31_coleta1.csv", "normal"),
-    ("sensor_data_sVaz_circuito31_coleta2.csv", "normal"),
-    ("sensor_data_sVaz_circuito32_coleta1.csv", "normal"),
-    ("sensor_data_sVaz_circuito32_coleta2.csv", "normal"),
-    ("sensor_data_cVaz_circuito1_avanço_0.6mm.csv", "vazamento_avanco"),
-    ("sensor_data_cVaz_circuito1_recuo_0.6mm.csv", "vazamento_recuo"),
+    #("sensor_data_sVaz_circuito31_coleta1.csv", "normal"),
+    #("sensor_data_sVaz_circuito31_coleta2.csv", "normal"),
+    #("sensor_data_sVaz_circuito32_coleta1.csv", "normal"),
+    #("sensor_data_sVaz_circuito32_coleta2.csv", "normal"),
+    #("sensor_data_cVaz_circuito1_avanço_0.6mm.csv", "vazamento_avanco"),
+    #("sensor_data_cVaz_circuito1_recuo_0.6mm.csv", "vazamento_recuo"),
     ("sensor_data_cVaz_circuito2_avanço_0.6mm.csv", "vazamento_avanco"),
     ("sensor_data_cVaz_circuito2_recuo_0.6mm.csv", "vazamento_recuo")
 ]
@@ -51,7 +51,7 @@ df_tsfel_input['label'] = rotulos
 # Extração de features com TSFEL
 cfg = tsfel.get_features_by_domain()
 # Now pass the DataFrame without the 'label' column to the extractor
-features = tsfel.time_series_features_extractor(cfg, df_tsfel_input.drop(columns=['label']), verbose=0)
+features = tsfel.time_series_features_extractor(cfg, df_tsfel_input.drop(columns=['label']), window_size=100, verbose=0)
 
 # Codificar os rótulos
 le = LabelEncoder()
