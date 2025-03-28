@@ -42,7 +42,9 @@ for nome_arquivo, rotulo in arquivos:
 
 # Reshape data for TSFEL -  create a DataFrame where each column is a time step
 num_time_steps = len(dados_janelas[0])  # Assuming all windows have the same length
+print(num_time_steps)
 all_windows = np.array(dados_janelas)  # Convert list of windows to a 2D array
+print(all_windows)
 df_tsfel_input = pd.DataFrame(all_windows) 
 
 # Add labels as a separate column
