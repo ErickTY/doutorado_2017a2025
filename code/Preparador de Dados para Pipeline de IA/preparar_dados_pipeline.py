@@ -24,9 +24,12 @@ arquivos = [
 # Função para extrair janelas (intervalos) do sinal
 def extrair_janelas(signal, tamanho=100, passo=10):
     janelas = []
+    rotulos_janela = [] # Lista para armazenar os rótulos correspondentes às janelas
     for i in range(0, len(signal) - tamanho, passo):
-        janelas.append(signal[i:i + tamanho].values.flatten())  # Ensure each window is a flat array
-    return janelas
+        janelas.append(signal[i:i + tamanho].values.flatten())
+        # Atribuir o rótulo da janela com base no rótulo original do arquivo
+        rotulos_janela.append(rotulo)  
+    return janelas, rotulos_janela
 
 # Carregar e processar todos os arquivos
 dados_janelas = []
@@ -36,31 +39,31 @@ for nome_arquivo, rotulo in arquivos:
     df = pd.read_csv(os.path.join(base_path, nome_arquivo))
     if "Pressure (bar)" not in df.columns:
         continue
-    janelas = extrair_janelas(df["Pressure (bar)"])
+    janelas, rotulos_janela = extrair_janelas(df["Pressure (bar)"]) # Obter janelas e rótulos
     dados_janelas.extend(janelas)
-    rotulos.extend([rotulo] * len(janelas))
+    rotulos.extend(rotulos_janela) # Usar os rótulos correspondentes às janelas
 
-# Reshape data for TSFEL -  create a DataFrame where each column is a time step
-num_time_steps = len(dados_janelas[0])  # Assuming all windows have the same length
-print(num_time_steps)
-all_windows = np.array(dados_janelas)  # Convert list of windows to a 2D array
-print(all_windows)
-df_tsfel_input = pd.DataFrame(all_windows) 
-
-# Add labels as a separate column
-df_tsfel_input['label'] = rotulos
-
+dados = {
+    "janelas": dados_janelas,
+    "rotulos": rotulos
+}
+dados_tsfel = pd.DataFrame(dados)
+# Convert the 'janelas' column to a 2D NumPy array
+janelas_np = np.vstack(dados_tsfel['janelas'].values)
 # Extração de features com TSFEL
 cfg = tsfel.get_features_by_domain()
 # Now pass the DataFrame without the 'label' column to the extractor
-features = tsfel.time_series_features_extractor(cfg, df_tsfel_input.drop(columns=['label']), window_size=100, verbose=0)
 
+features = []
+for i in range(len(janelas_np)):
+    # Extrair as features e converter para array NumPy, removendo o índice
+    extracted_features = tsfel.time_series_features_extractor(cfg, janelas_np[i], verbose=0)
+    features.append(extracted_features)
+
+features = pd.concat(features, ignore_index=True)
 # Codificar os rótulos
 le = LabelEncoder()
-y = le.fit_transform(df_tsfel_input['label'])
-
-# Salvar para uso no AIModelPipeline
-features.to_csv("./datasets/X_tsfel.csv", index=False)
-pd.DataFrame({"label": y}).to_csv("./datasets/y_tsfel.csv", index=False)
-
-print("✔️ Dados preparados e salvos: X_tsfel.csv e y_tsfel.csv")
+y = le.fit_transform(dados_tsfel['rotulos'])
+features['label'] = y
+features['rotulos'] = dados_tsfel['rotulos']
+features.to_csv('/content/doutorado2025/datasets/dataset.csv', index=False)
