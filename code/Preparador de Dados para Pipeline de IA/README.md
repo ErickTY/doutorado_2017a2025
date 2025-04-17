@@ -1,14 +1,15 @@
-# Preparador de Dados para Pipeline de IA com Séries Temporais
+# Preparador de Dados para CNN 1D com Séries Temporais
 
-Este projeto tem como objetivo preparar os dados de sensores de pressão, extraídos de diferentes circuitos (com e sem vazamentos), para uso em um pipeline de Inteligência Artificial (AIModelPipeline). A preparação inclui extração de janelas, extração de atributos e exportação final de dados prontos para modelagem.
+Este projeto tem como objetivo preparar os dados de sensores de pressão, extraídos de diferentes circuitos (com e sem vazamentos), para uso em modelos de Deep Learning baseados em redes neurais convolucionais (CNN 1D). A preparação inclui extração de janelas normalizadas dos sinais e codificação dos rótulos, com exportação dos dados em formato `.npy`.
 
 ---
 
 ## 🚀 Objetivo
 
-- Extrair janelas de 100 amostras dos sinais de pressão.
-- Usar a biblioteca **TSFEL** para extrair atributos estatísticos, temporais e espectrais dessas janelas.
-- Gerar arquivos `X_tsfel.csv` e `y_tsfel.csv` prontos para serem utilizados no `AIModelPipeline`.
+- Extrair janelas de 100 amostras dos sinais de pressão com passo de 10.
+- Aplicar normalização **z-score** individual por janela.
+- Codificar os rótulos usando `LabelEncoder`.
+- Gerar arquivos `X_cnn.npy`, `y_cnn.npy` e `labels_encoded.npy` prontos para treinamento de CNN 1D.
 
 ---
 
@@ -26,18 +27,19 @@ Este projeto tem como objetivo preparar os dados de sensores de pressão, extra�
 ### 2. Instale as bibliotecas necessárias
 
 ```python
-!pip install tsfel
+!pip install pandas numpy scikit-learn tensorflow
 ```
 
-### 3. Execute o script `preparar_dados_pipeline.py`
+### 3. Execute o script `preparar_dados_cnn.py`
 
 ```python
-%run /content/doutorado2025/code/Preparador\ de\ Dados\ para\ Pipeline\ de\ IA/preparar_dados_pipeline.py
+%run /content/doutorado2025/code/Preparador\ de\ Dados\ para\ CNN\ 1D/preparar_dados_cnn.py
 ```
 
-Isso irá gerar dois arquivos:
-- `X_tsfel.csv`: Dados de entrada com atributos extraídos
-- `y_tsfel.csv`: Rótulos codificados (normal ou vazamento)
+Isso irá gerar três arquivos:
+- `X_cnn.npy`: Dados de entrada para CNN com shape (amostras, time steps, 1)
+- `y_cnn.npy`: Rótulos codificados em one-hot encoding
+- `labels_encoded.npy`: Vetor com os rótulos inteiros codificados
 
 ---
 
@@ -46,11 +48,12 @@ Isso irá gerar dois arquivos:
 - **Entrada**: arquivos CSV contendo sinais de pressão (`Pressure (bar)`)
 - **Processo**:
   - Recorte de janelas com tamanho 100 e passo 10
-  - Extração de atributos com TSFEL (automática por domínio)
+  - Normalização z-score por janela
   - Codificação dos rótulos com `LabelEncoder`
 - **Saída**:
-  - DataFrame `X` com atributos para modelagem
-  - Vetor `y` com classes (0 = normal, 1 = vazamento)
+  - `X`: tensor (amostras, 100, 1) prontos para CNN 1D
+  - `y_cat`: rótulos em one-hot
+  - `y_encoded`: vetor de rótulos inteiros
 
 ---
 
@@ -58,30 +61,35 @@ Isso irá gerar dois arquivos:
 
 ```
 .
-├── preparar_dados_pipeline.py     # Script principal de processamento
-├── X_tsfel.csv                    # Dados prontos com features extraídas
-├── y_tsfel.csv                    # Rótulos codificados
+├── preparar_dados_cnn.py          # Script principal de processamento para CNN
+├── X_cnn.npy                      # Dados normalizados prontos para CNN 1D
+├── y_cnn.npy                      # Rótulos em one-hot encoding
+├── labels_encoded.npy             # Vetor de rótulos codificados
 ├── README.md                      # Este arquivo
 ```
 
 ---
 
-## ✅ Exemplo de Integração com AIModelPipeline
+## 🚗 Integração com TensorFlow/Keras
 
 ```python
-import pandas as pd
-from ai_pipeline import AIModelPipeline
+import numpy as np
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense
 
-X = pd.read_csv("X_tsfel.csv")
-y = pd.read_csv("y_tsfel.csv")["label"]
+X = np.load("X_cnn.npy")
+y = np.load("y_cnn.npy")
 
-pipeline = AIModelPipeline(X, y)
-pipeline.normalize()
-pipeline.apply_pca(n_components=5)
-pipeline.feature_extraction(k=10)
-pipeline.train_rf()
-pipeline.train_mlp()
-pipeline.summary()
+model = Sequential([
+    Conv1D(64, kernel_size=3, activation='relu', input_shape=(X.shape[1], 1)),
+    MaxPooling1D(pool_size=2),
+    Flatten(),
+    Dense(64, activation='relu'),
+    Dense(y.shape[1], activation='softmax')
+])
+
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model.fit(X, y, epochs=10, batch_size=32, validation_split=0.2)
 ```
 
 ---
@@ -95,4 +103,3 @@ Em caso de dúvidas, envie uma issue neste repositório ou entre em contato com 
 ## ✅ Licença
 
 Este projeto é de uso livre para fins acadêmicos e educacionais.
-
