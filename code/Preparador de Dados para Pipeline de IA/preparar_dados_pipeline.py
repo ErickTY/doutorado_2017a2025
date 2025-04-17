@@ -1,69 +1,70 @@
-import pandas as pd
 import os
-import tsfel
-from sklearn.preprocessing import LabelEncoder
 import numpy as np
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.utils import to_categorical
 
-# Caminho base para os arquivos
+# Caminho base dos arquivos
 base_path = './datasets/'
 
-# Lista de arquivos enviados (com nomes e rótulos atribuídos manualmente)
+# Lista de arquivos e seus rótulos
 arquivos = [
-    #("sensor_data_sVaz_circuito1.csv", "normal"),
     ("sensor_data_sVaz_circuito2.csv", "normal"),
-    #("sensor_data_sVaz_circuito31_coleta1.csv", "normal"),
-    #("sensor_data_sVaz_circuito31_coleta2.csv", "normal"),
-    #("sensor_data_sVaz_circuito32_coleta1.csv", "normal"),
-    #("sensor_data_sVaz_circuito32_coleta2.csv", "normal"),
-    #("sensor_data_cVaz_circuito1_avanço_0.6mm.csv", "vazamento_avanco"),
-    #("sensor_data_cVaz_circuito1_recuo_0.6mm.csv", "vazamento_recuo"),
     ("sensor_data_cVaz_circuito2_avanço_0.6mm.csv", "vazamento_avanco"),
     ("sensor_data_cVaz_circuito2_recuo_0.6mm.csv", "vazamento_recuo")
 ]
 
-# Função para extrair janelas (intervalos) do sinal
-def extrair_janelas(signal, tamanho=100, passo=10):
+# Parâmetros de janela
+tamanho_janela = 100
+passo = 10
+
+# Função para extrair janelas com normalização z-score
+def extrair_janelas(signal, tamanho=100, passo=10, rotulo=""):
     janelas = []
-    rotulos_janela = [] # Lista para armazenar os rótulos correspondentes às janelas
+    rotulos_janela = []
     for i in range(0, len(signal) - tamanho, passo):
-        janelas.append(signal[i:i + tamanho].values.flatten())
-        # Atribuir o rótulo da janela com base no rótulo original do arquivo
-        rotulos_janela.append(rotulo)  
+        janela = signal[i:i + tamanho].values.flatten()
+        # Normalização z-score por janela
+        if np.std(janela) > 0:
+            janela = (janela - np.mean(janela)) / np.std(janela)
+        else:
+            janela = np.zeros_like(janela)  # Prevenir divisão por zero
+        janelas.append(janela)
+        rotulos_janela.append(rotulo)
     return janelas, rotulos_janela
 
-# Carregar e processar todos os arquivos
+# Listas para armazenar os dados
 dados_janelas = []
 rotulos = []
 
+# Loop para processar os arquivos
 for nome_arquivo, rotulo in arquivos:
-    df = pd.read_csv(os.path.join(base_path, nome_arquivo))
+    caminho = os.path.join(base_path, nome_arquivo)
+    df = pd.read_csv(caminho)
+
     if "Pressure (bar)" not in df.columns:
+        print(f"Coluna 'Pressure (bar)' não encontrada em {nome_arquivo}")
         continue
-    janelas, rotulos_janela = extrair_janelas(df["Pressure (bar)"]) # Obter janelas e rótulos
+
+    janelas, rotulos_janela = extrair_janelas(df["Pressure (bar)"], tamanho_janela, passo, rotulo)
     dados_janelas.extend(janelas)
-    rotulos.extend(rotulos_janela) # Usar os rótulos correspondentes às janelas
+    rotulos.extend(rotulos_janela)
 
-dados = {
-    "janelas": dados_janelas,
-    "rotulos": rotulos
-}
-dados_tsfel = pd.DataFrame(dados)
-# Convert the 'janelas' column to a 2D NumPy array
-janelas_np = np.vstack(dados_tsfel['janelas'].values)
-# Extração de features com TSFEL
-cfg = tsfel.get_features_by_domain()
-# Now pass the DataFrame without the 'label' column to the extractor
+# Converter para array e formato CNN 1D
+X = np.array(dados_janelas)
+X = X[:, :, np.newaxis]  # shape (amostras, time steps, 1)
 
-features = []
-for i in range(len(janelas_np)):
-    # Extrair as features e converter para array NumPy, removendo o índice
-    extracted_features = tsfel.time_series_features_extractor(cfg, janelas_np[i], verbose=0)
-    features.append(extracted_features)
-
-features = pd.concat(features, ignore_index=True)
-# Codificar os rótulos
+# Codificar rótulos
 le = LabelEncoder()
-y = le.fit_transform(dados_tsfel['rotulos'])
-features['label'] = y
-features['rotulos'] = dados_tsfel['rotulos']
-features.to_csv('/content/doutorado2025/datasets/dataset.csv', index=False)
+y_encoded = le.fit_transform(rotulos)
+y_cat = to_categorical(y_encoded)
+
+# Exibir resultados
+print("Shape X:", X.shape)
+print("Shape y (categorical):", y_cat.shape)
+print("Classes:", le.classes_)
+
+# Salvar para reuso
+np.save("X_cnn.npy", X)
+np.save("y_cnn.npy", y_cat)
+np.save("labels_encoded.npy", y_encoded)
