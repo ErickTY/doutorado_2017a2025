@@ -1,95 +1,92 @@
-# Treinamento de Modelos ELM e ESN com Features Otimizadas para ESP32
+# 🧠 Classificação com ELM no ESP32
 
-Este repositório descreve passo a passo como treinar classificadores leves (ELM e ESN) com features selecionadas, visando a futura implantação embarcada no ESP32. O processo contempla seleção de atributos, normalização, treino e exportação dos parâmetros do modelo.
-
----
-
-## 🧠 Etapa 1 – Pré-requisitos
-
-Instale as dependências básicas:
-```bash
-pip install numpy pandas scikit-learn matplotlib
-```
-Opcional para ESN:
-```bash
-pip install git+https://github.com/cknd/pyESN.git
-```
+Este repositório apresenta uma abordagem completa para treinar e embarcar modelos de classificação usando o algoritmo ELM (Extreme Learning Machine) no microcontrolador ESP32. O pipeline abrange desde a extração de atributos, seleção de features, treinamento do modelo e integração dual-core para inferência em tempo real.
 
 ---
 
-## 📂 Etapa 2 – Carregamento dos Dados
-```python
-import numpy as np
-X = np.load("X_cnn.npy").squeeze()        # shape: (amostras, time_steps)
-y = np.load("labels_encoded.npy")         # shape: (amostras,)
-```
+## 🎯 Objetivo
+
+Implementar um sistema embarcado inteligente para:
+- Detectar padrões em séries temporais (ex: pressão pneumática);
+- Executar classificação local via ELM;
+- Utilizar dois núcleos do ESP32: um para pré-processamento e outro para inferência;
+- Exportar resultados em `.json` e via protocolo industrial (MQTT/Modbus).
 
 ---
 
-## 📊 Etapa 3 – Seleção das Top 10 Features com Random Forest
-```python
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler
+## 📁 Estrutura do Projeto
 
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
-rf = RandomForestClassifier(n_estimators=100, random_state=42)
-rf.fit(X_scaled, y)
-
-importances = rf.feature_importances_
-top_idx = np.argsort(importances)[-10:]
-X_selected = X_scaled[:, top_idx]
-
-np.save("selected_features_idx.npy", top_idx)  # salvar para embarcar no ESP32
+```
+.
+├── treino_modelo/             # Pipeline de treinamento com seleção de features
+│   ├── treino_elm.py
+│   └── selected_features_idx.npy
+│   └── W_elm.csv / Wout.csv / mean.csv / std.csv
+├── esp32_firmware/           # Código C++ para Arduino IDE
+│   ├── classificador_elm.ino
+│   └── pesos_elm.h
+├── utils/
+│   └── converter_csv_para_h.py
+├── README.md
 ```
 
 ---
 
-## 🔁 Etapa 4 – Treinamento com MLP (Simulação do ELM)
-```python
-from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import classification_report
+## 🔁 Pipeline de Treinamento (Python)
 
-X_train, X_test, y_train, y_test = train_test_split(X_selected, y, test_size=0.2, stratify=y)
-mlp = MLPClassifier(hidden_layer_sizes=(10,), max_iter=300, random_state=42)
-mlp.fit(X_train, y_train)
-print(classification_report(y_test, mlp.predict(X_test)))
-```
+1. **Pré-processamento e extração de features** com TSFEL.
+2. **Seleção das top 10 features** com Random Forest.
+3. **Treinamento do ELM** via MLPClassifier.
+4. **Exportação dos pesos** para `.csv`.
+5. **Conversão para `.h`** usando `converter_csv_para_h.py`.
 
 ---
 
-## ⚡ Etapa 5 – Treinamento com ESN (Opcional)
-```python
-from pyESN import ESN
+## ⚙️ Firmware ESP32
 
-esn = ESN(n_inputs=10, n_outputs=len(np.unique(y)), n_reservoir=200, sparsity=0.1, random_state=42)
-y_onehot = np.eye(len(np.unique(y)))[y_train]
-esn.fit(X_train, y_onehot)
+- `classificador_elm.ino`:
+  - Leitura de dados do sensor;
+  - Normalização com Z-Score embarcado;
+  - Classificação via ELM;
+  - Serial print e exportação JSON.
 
-pred = esn.predict(X_test)
-y_pred = np.argmax(pred, axis=1)
-print(classification_report(y_test, y_pred))
-```
+- `pesos_elm.h`: contém os pesos e parâmetros embarcados.
 
 ---
 
-## 💾 Etapa 6 – Exportação dos Pesos para Embedding no ESP32
-```python
-np.savetxt("W_elm.csv", mlp.coefs_[0], delimiter=",")     # pesos da entrada para camada oculta
-np.savetxt("Wout_elm.csv", mlp.coefs_[1], delimiter=",")  # pesos da camada oculta para saída
-np.savetxt("means.csv", scaler.mean_[top_idx], delimiter=",")
-np.savetxt("stds.csv", scaler.scale_[top_idx], delimiter=",")
+## 🔌 Comunicação
+- Resultado da inferência exportado em JSON:
+```json
+{
+  "timestamp": "2025-04-22T14:33:01Z",
+  "classe": "vazamento_recuo",
+  "probabilities": [0.01, 0.03, 0.02, 0.94]
+}
 ```
-Para o ESN:
-```python
-np.savetxt("Win_esn.csv", esn.Win, delimiter=",")
-np.savetxt("W_esn.csv", esn.W, delimiter=",")
-np.savetxt("Wout_esn.csv", esn.Wout, delimiter=",")
-```
+- Suporte a MQTT ou Modbus TCP (implementação futura).
 
 ---
 
-## ✅ Conclusão
-Este pipeline reduz a dimensionalidade dos dados com base na importância das features, o que permite a execução eficiente do modelo ELM ou ESN no ESP32. Os arquivos exportados em `.csv` poderão ser convertidos para `.h` e integrados ao firmware da aplicação embarcada.
+## 🧪 Exemplo de Uso
+
+1. Execute `treino_elm.py` para gerar pesos otimizados.
+2. Execute `converter_csv_para_h.py` para criar `pesos_elm.h`.
+3. Compile `classificador_elm.ino` na Arduino IDE.
+4. Veja a saída no monitor serial ou exporte para broker MQTT.
+
+---
+
+## 📚 Referências
+- Huang et al., "Extreme Learning Machine: Theory and Applications," 2006.
+- Barandas et al., "TSFEL: Time Series Feature Extraction Library," SoftwareX, 2020.
+- ESP32 Dual Core Programming: https://docs.espressif.com/
+
+---
+
+## ✅ Licença
+Este projeto é de uso livre para fins acadêmicos, educacionais e projetos embarcados open-source.
+
+---
+
+Para dúvidas, contribuições ou sugestões, abra uma issue ou envie um pull request 🚀
+
