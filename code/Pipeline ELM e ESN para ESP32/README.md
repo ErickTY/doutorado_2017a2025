@@ -1,92 +1,91 @@
-# 🧠 Classificação com ELM no ESP32
+# 🤖 Classificação Embarcada com ELM e ESN no ESP32
 
-Este repositório apresenta uma abordagem completa para treinar e embarcar modelos de classificação usando o algoritmo ELM (Extreme Learning Machine) no microcontrolador ESP32. O pipeline abrange desde a extração de atributos, seleção de features, treinamento do modelo e integração dual-core para inferência em tempo real.
+Este repositório apresenta uma solução completa para implantação de algoritmos de classificação baseados em redes neurais leves — **ELM (Extreme Learning Machine)** e **ESN (Echo State Network)** — embarcados no microcontrolador **ESP32**, com foco em aplicações de manutenção preditiva e IoT industrial.
 
 ---
 
 ## 🎯 Objetivo
 
-Implementar um sistema embarcado inteligente para:
-- Detectar padrões em séries temporais (ex: pressão pneumática);
-- Executar classificação local via ELM;
-- Utilizar dois núcleos do ESP32: um para pré-processamento e outro para inferência;
-- Exportar resultados em `.json` e via protocolo industrial (MQTT/Modbus).
+Implementar classificadores eficientes e de baixo custo computacional que possam ser executados localmente no ESP32, utilizando:
+- 🧠 **ELM**: rede neural com treinamento instantâneo e inferência leve.
+- 🌊 **ESN**: rede recorrente baseada em reservatório com excelente modelagem temporal.
+
+Ambos os modelos são treinados com **features extraídas de sinais de sensores (como pressão)** e implementados com **uso otimizado de memória e tempo de inferência**.
 
 ---
 
-## 📁 Estrutura do Projeto
+## 🗂 Estrutura do Projeto
 
 ```
 .
-├── treino_modelo/             # Pipeline de treinamento com seleção de features
-│   ├── treino_elm.py
-│   └── selected_features_idx.npy
-│   └── W_elm.csv / Wout.csv / mean.csv / std.csv
-├── esp32_firmware/           # Código C++ para Arduino IDE
+├── treinamento/              # Scripts Python de pré-processamento e treino
+│   ├── seletor_features.py
+│   ├── treinar_elm.py
+│   ├── treinar_esn.py
+│   └── exportar_para_esp32.py
+│
+├── firmware_esp32/          # Código C++ para execução embarcada no ESP32
 │   ├── classificador_elm.ino
-│   └── pesos_elm.h
-├── utils/
-│   └── converter_csv_para_h.py
-├── README.md
+│   ├── classificador_esn.ino
+│   └── pesos_elm.h / pesos_esn.h
+│
+├── datasets/                # Dados simulados ou reais para teste
+│   ├── X_cnn.npy
+│   ├── labels_encoded.npy
+│   └── X_tsfel.csv
+│
+└── README.md
 ```
 
 ---
 
-## 🔁 Pipeline de Treinamento (Python)
+## 🔁 Modelos Utilizados
 
-1. **Pré-processamento e extração de features** com TSFEL.
-2. **Seleção das top 10 features** com Random Forest.
-3. **Treinamento do ELM** via MLPClassifier.
-4. **Exportação dos pesos** para `.csv`.
-5. **Conversão para `.h`** usando `converter_csv_para_h.py`.
+### 🧠 Extreme Learning Machine (ELM)
+- Rede neural feedforward com uma camada oculta.
+- Os pesos de entrada são aleatórios e fixos.
+- O único peso treinado é a saída, via pseudoinversa.
+- Vantagens: alta velocidade de treinamento e inferência embarcada simples.
 
----
-
-## ⚙️ Firmware ESP32
-
-- `classificador_elm.ino`:
-  - Leitura de dados do sensor;
-  - Normalização com Z-Score embarcado;
-  - Classificação via ELM;
-  - Serial print e exportação JSON.
-
-- `pesos_elm.h`: contém os pesos e parâmetros embarcados.
+### 🌊 Echo State Network (ESN)
+- Rede recorrente com estado interno dinâmico.
+- Apenas a saída é treinada.
+- Ideal para capturar **padrões temporais em séries de sensores**.
+- Vantagens: baixo custo de treinamento, bom desempenho para séries temporais.
 
 ---
 
-## 🔌 Comunicação
-- Resultado da inferência exportado em JSON:
-```json
-{
-  "timestamp": "2025-04-22T14:33:01Z",
-  "classe": "vazamento_recuo",
-  "probabilities": [0.01, 0.03, 0.02, 0.94]
-}
-```
-- Suporte a MQTT ou Modbus TCP (implementação futura).
+## ⚙️ Execução no ESP32
+
+- Núcleo 0: responsável pela aquisição e normalização das entradas (pré-processamento).
+- Núcleo 1: realiza a classificação usando os pesos carregados e escreve os resultados em um arquivo `.json` ou envia via MQTT/Modbus.
+
+### Comunicação Industrial (opcional):
+- ✅ MQTT (comunicador leve em tempo real)
+- ✅ Modbus TCP (para CLPs)
+- ✅ HTTP REST (integração com APIs)
 
 ---
 
-## 🧪 Exemplo de Uso
+## 📥 Exportação dos Pesos
 
-1. Execute `treino_elm.py` para gerar pesos otimizados.
-2. Execute `converter_csv_para_h.py` para criar `pesos_elm.h`.
-3. Compile `classificador_elm.ino` na Arduino IDE.
-4. Veja a saída no monitor serial ou exporte para broker MQTT.
+Após o treinamento em Python:
+- `W_elm.csv`, `Wout_elm.csv` → convertidos para `pesos_elm.h`
+- `Win_esn.csv`, `W_esn.csv`, `Wout_esn.csv` → convertidos para `pesos_esn.h`
+
+Utilize `scripts/exportar_para_esp32.py` para automatizar a conversão para cabeçalhos C++.
+
+---
+
+## 📊 Resultados Esperados
+- Acurácia acima de 95% para problemas de detecção de falhas com features TSFEL.
+- Tempo de inferência médio por amostra: `~70 µs` (ELM) e `~70–100 µs` (ESN).
+- Executável em dispositivos de baixo consumo e memória limitada.
 
 ---
 
 ## 📚 Referências
-- Huang et al., "Extreme Learning Machine: Theory and Applications," 2006.
-- Barandas et al., "TSFEL: Time Series Feature Extraction Library," SoftwareX, 2020.
-- ESP32 Dual Core Programming: https://docs.espressif.com/
-
----
-
-## ✅ Licença
-Este projeto é de uso livre para fins acadêmicos, educacionais e projetos embarcados open-source.
-
----
-
-Para dúvidas, contribuições ou sugestões, abra uma issue ou envie um pull request 🚀
+- Huang, G.-B., et al. "Extreme learning machine: theory and applications." *Neurocomputing*, 2006.
+- Lukosevicius, M. and Jaeger, H. "Reservoir computing approaches to recurrent neural network training." *Computer Science Review*, 2009.
+- Barandas, M., et al. "TSFEL: Time Series Feature Extraction Library." *SoftwareX*, 2020.
 
