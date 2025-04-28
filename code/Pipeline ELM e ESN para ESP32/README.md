@@ -14,16 +14,16 @@ Projeto para realizar inferência de detecção de vazamentos em sistemas pneum�
 ```
 ESP32_Model_Deployment/
 ├── include/
-│   ├── features.h
-│   ├── normalization.h
-│   ├── elm_model.h
-│   └── esn_model.h
+│   ├── features.h         // Lista de features selecionadas
+│   ├── normalization.h    // Vetores de médias e desvios padrão
+│   ├── elm_model.h        // Pesos do modelo ELM
+│   └── esn_model.h        // Pesos do modelo ESN
 ├── src/
-│   └── main_elm_esn_example.ino
+│   └── main_elm_esn_example.ino // Código principal
 ├── data/
-│   └── model_config.json
-├── platformio.ini
-└── README.md
+│   └── model_config.json  // Arquivo de modelo para OTA
+├── platformio.ini            // Configuração para PlatformIO
+└── README.md                  // Este documento
 ```
 
 ---
@@ -39,11 +39,11 @@ ESP32_Model_Deployment/
 ### Definições no código:
 ```cpp
 #define LOAD_MODEL_FROM_FLASH 1 // 1 = carregar de .h; 0 = carregar de model_config.json
-#define MODEL_TYPE "ELM" // "ELM" ou "ESN"
+#define MODEL_TYPE "ELM"         // "ELM" ou "ESN"
 
-#define SENSOR_PIN 34
-#define LED_PIN 2
-#define BUZZER_PIN 15
+#define SENSOR_PIN 34            // Pino do sensor analógico
+#define LED_PIN 2                // LED de aviso de vazamento
+#define BUZZER_PIN 15            // Buzzer de aviso sonoro
 ```
 
 - **LOAD_MODEL_FROM_FLASH**: Define se vai usar os pesos embarcados nos headers ou carregar dinamicamente.
@@ -60,16 +60,16 @@ ESP32_Model_Deployment/
 ## Funções Principais
 
 - `normalize_input(window[], normalized_output[])`
-  - Aplica z-score utilizando as médias e desvios salvos.
+  - Aplica z-score utilizando as médias e desvios salvos para cada feature.
 
 - `predict_model(normalized_input[], model_type)`
-  - Chama `predict_elm()` ou `predict_esn()` baseado no tipo escolhido.
+  - Encaminha a inferência para o ELM ou ESN conforme o modelo escolhido.
 
 - `PreProcessTask()`
-  - Captura sensor, monta janela de 100 amostras, normaliza.
+  - Lê valores do sensor, monta a janela de 100 amostras e normaliza os dados.
 
 - `ClassifyTask()`
-  - Classifica usando o modelo selecionado, aciona LED e Buzzer em caso de vazamento.
+  - Utiliza os dados normalizados para realizar classificação e acionar LED/Buzzer se vazamento for detectado.
 
 
 ---
@@ -82,11 +82,11 @@ float resultado = predict_model(input_normalized, MODEL_TYPE);
 int classe_prevista = (int)resultado;
 
 if (classe_prevista == VAZAMENTO_AVANCO || classe_prevista == VAZAMENTO_RECUO) {
-  digitalWrite(LED_PIN, HIGH);
-  tone(BUZZER_PIN, 1000);
+  digitalWrite(LED_PIN, HIGH);  // Liga o LED
+  tone(BUZZER_PIN, 1000);       // Liga o buzzer
 } else {
-  digitalWrite(LED_PIN, LOW);
-  noTone(BUZZER_PIN);
+  digitalWrite(LED_PIN, LOW);   // Desliga o LED
+  noTone(BUZZER_PIN);           // Desliga o buzzer
 }
 ```
 
@@ -102,6 +102,7 @@ if (classe_prevista == VAZAMENTO_AVANCO || classe_prevista == VAZAMENTO_RECUO) {
 ---
 
 ## Futuras Expansões
-- Atualização OTA automática de modelos
-- Adição de WebServer para monitoramento
-- Integração com MQTT para alertas remotos
+- Atualização OTA automática de modelos.
+- Adição de WebServer para monitoramento em tempo real.
+- Integração com MQTT para alertas remotos.
+- Otimização de pré-processamento local adaptando TSFEL em C++.
