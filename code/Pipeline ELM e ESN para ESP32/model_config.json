@@ -1,0 +1,37 @@
+// model_config.json - Estrutura do modelo para carregamento dinâmico (OTA ou SPIFFS)
+// Este é o formato JSON usado para carregar os pesos do modelo se LOAD_MODEL_FROM_FLASH estiver desativado
+
+{
+  "features": [
+    "0_MFCC_3",
+    "0_MFCC_4",
+    "0_Negative turning points",
+    "0_MFCC_2",
+    "0_ECDF Percentile_1",
+    "0_Max",
+    "0_Entropy",
+    "0_Mean absolute deviation",
+    "0_Kurtosis",
+    "0_Median absolute deviation"
+  ],
+  "normalization": {
+    "means": [0.015, 0.020, 5.312, 0.018, 45.7, 6.85, 2.11, 0.89, 3.02, 0.75],
+    "stds": [0.012, 0.015, 2.89, 0.011, 25.4, 2.15, 0.35, 0.28, 1.45, 0.24]
+  },
+  "elm": {
+    "input_weights": [[...]],
+    "output_weights": [[...]]
+  },
+  "esn": {
+    "Win": [[...]],
+    "W": [[...]],
+    "Wout": [[...]]
+  }
+}
+
+// Notas:
+// - "features" define a ordem das entradas.
+// - "normalization" define médias e desvios para normalização.
+// - "elm" e "esn" contêm os pesos dos modelos.
+// - Os valores "[...]" representam arrays grandes que serão preenchidos com os pesos treinados.
+// - Carregamento e parsing são feitos usando biblioteca JSON no ESP32.
