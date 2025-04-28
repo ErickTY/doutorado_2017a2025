@@ -1,108 +1,110 @@
-# ESP32_Model_Deployment
+# README.md - Deploy do Projeto ESP32_Model_Deployment
 
-## Visão Geral
-Projeto para realizar inferência de detecção de vazamentos em sistemas pneumáticos usando um ESP32:
-- Lê dados de um sensor analógico de pressão.
-- Faz pré-processamento (normalização z-score).
-- Classifica usando ELM ou ESN.
-- Rodando com tarefas separadas nos núcleos 0 e 1.
+## 🚀 Visão Geral
+Este projeto permite:
+- Leitura de um sensor de pressão analógico.
+- Pré-processamento com normalização z-score.
+- Classificação de estado normal ou vazamento via ELM ou ESN.
+- Alarme com LED e Buzzer em caso de vazamento detectado.
+- Uso de dois núcleos do ESP32 para processamento paralelo.
 
 ---
 
-## Estrutura de Pastas
+## 📚 Estrutura do Projeto
 
 ```
 ESP32_Model_Deployment/
 ├── include/
-│   ├── features.h         // Lista de features selecionadas
-│   ├── normalization.h    // Vetores de médias e desvios padrão
-│   ├── elm_model.h        // Pesos do modelo ELM
-│   └── esn_model.h        // Pesos do modelo ESN
+│   ├── features.h
+│   ├── normalization.h
+│   ├── elm_model.h
+│   └── esn_model.h
 ├── src/
-│   └── main_elm_esn_example.ino // Código principal
+│   └── main_elm_esn_example.ino
 ├── data/
-│   └── model_config.json  // Arquivo de modelo para OTA
-├── platformio.ini            // Configuração para PlatformIO
-└── README.md                  // Este documento
+│   └── model_config.json (opcional)
+├── platformio.ini
+└── README.md
 ```
 
 ---
 
-## Dependências
-- ESP32 Board (na Arduino IDE ou PlatformIO)
-- Biblioteca padrão do ESP32 (analogRead, Serial, etc)
+## ⚙️ Configurações Iniciais
 
----
-
-## Configurações Principais
-
-### Definições no código:
+### Definições no Código
 ```cpp
-#define LOAD_MODEL_FROM_FLASH 1 // 1 = carregar de .h; 0 = carregar de model_config.json
+#define LOAD_MODEL_FROM_FLASH 1 // 1 = carregar .h, 0 = carregar model_config.json
 #define MODEL_TYPE "ELM"         // "ELM" ou "ESN"
 
-#define SENSOR_PIN 34            // Pino do sensor analógico
-#define LED_PIN 2                // LED de aviso de vazamento
-#define BUZZER_PIN 15            // Buzzer de aviso sonoro
+#define SENSOR_PIN 34            // Pino de leitura analógica
+#define LED_PIN 2                // Pino do LED de alarme
+#define BUZZER_PIN 15            // Pino do Buzzer
 ```
 
-- **LOAD_MODEL_FROM_FLASH**: Define se vai usar os pesos embarcados nos headers ou carregar dinamicamente.
-- **MODEL_TYPE**: Escolhe qual modelo usar na inferência ("ELM" ou "ESN").
-
-
-### Tarefas nos Núcleos:
-- **Core 0**: Lê sensor e normaliza
-- **Core 1**: Classifica e aciona alarmes
-
-
----
-
-## Funções Principais
-
-- `normalize_input(window[], normalized_output[])`
-  - Aplica z-score utilizando as médias e desvios salvos para cada feature.
-
-- `predict_model(normalized_input[], model_type)`
-  - Encaminha a inferência para o ELM ou ESN conforme o modelo escolhido.
-
-- `PreProcessTask()`
-  - Lê valores do sensor, monta a janela de 100 amostras e normaliza os dados.
-
-- `ClassifyTask()`
-  - Utiliza os dados normalizados para realizar classificação e acionar LED/Buzzer se vazamento for detectado.
-
+### Configuração do PlatformIO (`platformio.ini`)
+```ini
+[env:esp32dev]
+platform = espressif32
+board = esp32dev
+framework = arduino
+monitor_speed = 115200
+upload_speed = 921600
+```
 
 ---
 
-## Exemplo de Uso
+## 🔄 Fluxo de Deploy
 
+1. **Importar o projeto** no PlatformIO.
+2. **Verificar porta** do ESP32 (`COMx` ou `/dev/ttyUSBx`).
+3. **Build** ✅ e **Upload** ➡️.
+4. **Abrir Serial Monitor** para acompanhar a execução.
+5. **Testar o sensor**:
+   - Sem vazamento: LED/Buzzer desligados.
+   - Com vazamento: LED acende e Buzzer apita.
+
+---
+
+## 🔍 Funções Importantes
+
+- `normalize_input()` - Aplica normalização z-score nas features.
+- `predict_model()` - Decide entre `predict_elm()` ou `predict_esn()`.
+- `PreProcessTask()` - Lê sensor e monta janela de amostras.
+- `ClassifyTask()` - Classifica e aciona alarmes.
+
+---
+
+## 🔄 Atualização do Modelo OTA (Opcional)
+
+1. Coloque `model_config.json` na pasta `data/`.
+2. Use `Upload File System Image` do PlatformIO.
+3. Mude no código para carregar do arquivo:
 ```cpp
-// Dentro da tarefa de classificacao
-float resultado = predict_model(input_normalized, MODEL_TYPE);
-int classe_prevista = (int)resultado;
-
-if (classe_prevista == VAZAMENTO_AVANCO || classe_prevista == VAZAMENTO_RECUO) {
-  digitalWrite(LED_PIN, HIGH);  // Liga o LED
-  tone(BUZZER_PIN, 1000);       // Liga o buzzer
-} else {
-  digitalWrite(LED_PIN, LOW);   // Desliga o LED
-  noTone(BUZZER_PIN);           // Desliga o buzzer
-}
+#define LOAD_MODEL_FROM_FLASH 0
 ```
 
+---
+
+## 📚 Checklist de Teste
+
+- [ ] Upload realizado com sucesso
+- [ ] Sensor respondendo no Serial Monitor
+- [ ] LED e Buzzer funcionando em casos de vazamento
+- [ ] Mudança de MODEL_TYPE testada ("ELM" / "ESN")
+- [ ] (Opcional) model_config.json carregado via SPIFFS
 
 ---
 
-## Observações
-- O sensor deve estar corretamente calibrado para gerar pressão entre 0 e 12 bar.
-- A leitura é feita via `analogRead()` considerando resolução de 12 bits.
-- Para atualizações de modelo futuras, basta trocar o `model_config.json` e recarregar no SPIFFS.
-
+## 🔍 Futuras Melhorias
+- Integração com MQTT
+- Criação de um WebServer de status
+- Atualização automática de modelos via rede
+- Otimização da filtragem e extração de features
 
 ---
 
-## Futuras Expansões
-- Atualização OTA automática de modelos.
-- Adição de WebServer para monitoramento em tempo real.
-- Integração com MQTT para alertas remotos.
-- Otimização de pré-processamento local adaptando TSFEL em C++.
+# 📈 Status: Pronto para Deploy!
+
+Deploy realizado corretamente no ESP32! ✨
+
+---
